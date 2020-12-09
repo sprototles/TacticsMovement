@@ -292,28 +292,38 @@ public class Tile : MonoBehaviour
 
     private void OnLeftMouseClick()
     {
+        Debug.Log("<color=yellow> OnLeftMouseClick </color>\n Tile " + this + " \n", gameObject);
+
         // check if some unit was selected 
-        if(TileManager.selectedUnit != null)
+        if (TileManager.selectedUnit != null)
         {
-            // check if some tile was selected before and reset its status
-            if (TileManager.selectedTile != null)
+            if (!TileManager.selectedUnit.isMoving)
             {
-                // check if selected tile is THIS or not
-                if (TileManager.selectedTile != this)
+                // check if some tile was selected before and reset its status
+                if (TileManager.selectedTile != null)
                 {
-                    TileManager.selectedTile.target = false;
+                    // check if selected tile is THIS or not
+                    if (TileManager.selectedTile != this)
+                    {
+                        TileManager.selectedTile.target = false;
+                    }
+                }
+
+                TileManager.selectedTile = this;
+
+                // can unit move to this tile ?
+                if (selectable)
+                {
+                    target = true;
+
+                    TileManager.UpdateTileColor(true);
+
+                    // selected unit move to this tile
+
+                    TileManager.selectedUnit.MoveToTile(this);
+
                 }
             }
-
-            TileManager.selectedTile = this;
-            
-            target = true;
-
-            TileManager.UpdateTileColor(true);
-
-            // selected unit move to this tile
-
-            TileManager.selectedUnit.MoveToTile(this);
 
         }
 
@@ -321,9 +331,11 @@ public class Tile : MonoBehaviour
 
     private void OnRightMouseClick()
     {
-        TileManager.UpdateTileColor(false);
-        TileManager.selectedTile = null;
+        Debug.Log("<color=yellow> OnRightMouseClick </color>\n Tile " + this +" \n", gameObject);
+
         TileManager.selectedUnit = null;
+        TileManager.selectedTile = null;
+        TileManager.UpdateTileColor(false);
     }
 
     #endregion

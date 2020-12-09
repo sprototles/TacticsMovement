@@ -37,12 +37,23 @@ public class TacticsMove : MonoBehaviour
     public Stack<Tile> path = new Stack<Tile>();
 
     /// <summary>
+    /// max distance unit can move
+    /// </summary>
+    public int move = 8;
+
+    /// <summary>
     /// 
     /// </summary>
-    public int move = 5;
-
     public float moveSpeed = 2.0f;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public float jumpVelocity = 4.5f;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool isMoving = false;
 
     /// <summary>
@@ -55,9 +66,14 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public float jumpHeight = 2;
 
-    Vector3 velocity = new Vector3();
-    Vector3 heading = new Vector3();
+    public bool fallingDown = false;
+    public bool jumpingUp = false;
+    public bool movingEdge = false;
 
+    public Vector3 velocity = new Vector3();
+    public Vector3 heading = new Vector3();
+    public Vector3 jumpTarget = new Vector3();
+    
 
     [Header("Graphics")]
     public Renderer render;
@@ -142,6 +158,8 @@ public class TacticsMove : MonoBehaviour
         ComputeAdjacencyLists();
         GetCurrentTile();
 
+        currentTile.walkable = true;
+
         Queue<Tile> process = new Queue<Tile>();
 
         process.Enqueue(currentTile);
@@ -220,6 +238,23 @@ public class TacticsMove : MonoBehaviour
 
             if (Vector3.Distance(transform.position, target) >= 0.05f)
             {
+
+                #region Jump
+                /*
+                bool jump = transform.position.y != target.y;
+
+                if (jump)
+                {
+                    Jump(target);
+                }
+                else
+                {
+                    CalculateHeading(target);
+                    SetHorizontalVelocity();
+                }
+                */
+                #endregion
+
                 CalculateHeading(target);
                 SetHorizontalVelocity();
 
@@ -232,15 +267,23 @@ public class TacticsMove : MonoBehaviour
                 transform.position = target;
                 path.Pop();
             }
-
         }
         else
         {
             // target has been reached
-            // moving = false;
+            isMoving = false;
+
+            GetCurrentTile();
+
+            currentTile.walkable = false;
 
             RemoveSelectableTiles();
 
+            TileManager.selectedUnit = null;
+            TileManager.selectedTile = null;
+
+            // update map color
+            TileManager.UpdateTileColor(false);
 
         }
     }
@@ -248,12 +291,113 @@ public class TacticsMove : MonoBehaviour
     private void CalculateHeading(Vector3 target)
     {
         heading = target - transform.position;
+
         heading.Normalize();
     }
 
     private void SetHorizontalVelocity()
     {
         velocity = heading * moveSpeed;
+    }
+
+    private void Jump(Vector3 target)
+    {
+        if (fallingDown)
+        {
+            FallDownward(target);
+        }
+        else if (jumpingUp)
+        {
+            JumpUpward(target);
+        }
+        else if (movingEdge)
+        {
+            MoveToEdge();
+        }
+        else
+        {
+            PrepareJump(target);
+        }
+    }
+
+    private void FallDownward(Vector3 target)
+    {
+        velocity += Physics.gravity * Time.deltaTime;
+
+        if(transform.position.y <= target.y)
+        {
+            fallingDown = false;
+            jumpingUp = false;
+            movingEdge = false;
+
+            Vector3 p = transform.position;
+            p.y = target.y;
+            transform.position = p;
+
+            velocity = new Vector3();
+        }
+    }
+
+    private void JumpUpward(Vector3 target)
+    {
+        velocity += Physics.gravity * Time.deltaTime;
+
+        if(transform.position.y > target.y)
+        {
+            jumpingUp = false;
+            fallingDown = true;
+        }
+    }
+
+    /// <summary>
+    /// moving to edge of tile and preparing for jump/fall
+    /// </summary>
+    private void MoveToEdge()
+    {
+        if(Vector3.Distance(transform.position,jumpTarget) >= 0.05f)
+        {
+            SetHorizontalVelocity();
+        }
+        else
+        {
+            movingEdge = false;
+            fallingDown = true;
+
+            velocity /= 5.0f;
+            velocity.y = 1.5f;
+
+        }
+    }
+
+    private void PrepareJump(Vector3 target)
+    {
+        float targetY = target.y;
+
+        target.y = transform.position.y;
+
+        CalculateHeading(target);
+
+        if(transform.position.y > targetY)
+        {
+            fallingDown = false;
+            jumpingUp = false;
+            movingEdge = true;
+
+            jumpTarget = transform.position + ((target - transform.position) / 2.0f);
+        }
+        else
+        {
+            fallingDown = false;
+            jumpingUp = true;
+            movingEdge = false;
+
+            velocity = heading * moveSpeed / 3.0f;
+
+            float difference = targetY - transform.position.y;
+
+            velocity.y = jumpVelocity * (0.5f + difference / 2.0f);
+        }
+
     }
 
 
@@ -297,13 +441,18 @@ public class TacticsMove : MonoBehaviour
 
     private void OnLeftMouseClick()
     {
+        Debug.Log("<color=yellow> OnLeftMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
+
         FindSelectableTiles();
+
         TileManager.UpdateTileColor(true);
         TileManager.selectedUnit = this;
 
     }
     private void OnRightMouseClick()
     {
+        Debug.Log("<color=yellow> OnRightMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
+
         TileManager.UpdateTileColor(false);
         TileManager.selectedUnit = null;
     }
