@@ -11,6 +11,8 @@ public class Tile : MonoBehaviour
 {
     public EnumTileType enumTileType;
 
+    public List<TacticsMove> unitsOnTile = new List<TacticsMove>();
+
     #region Movement
 
     /// <summary>
@@ -199,7 +201,11 @@ public class Tile : MonoBehaviour
     /// </summary>
     public void SetTileColor_Move()
     {
-        if (!walkable)
+        if(TileManager.GameMode == EnumGameMode.OneByOne && unitsOnTile.Count > 0)
+        {
+            material.color = Color.grey;
+        }
+        else if (!walkable)
         {
             material.color = Color.grey;
         }
@@ -273,6 +279,32 @@ public class Tile : MonoBehaviour
             }
         }
 
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unit"></param>
+    public void UnitsOnTile_Add(TacticsMove unit)
+    {
+        // Debug.Log(" UnitsOnTile_Add \n 01 \n unit: " + unit, gameObject);
+        unitsOnTile.Add(unit);
+
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unit"></param>
+    public void UnitsOnTile_Remove(TacticsMove unit)
+    {
+        if(unitsOnTile != null)
+        {
+            unitsOnTile.Remove(unit);
+
+
+        }
     }
 
 

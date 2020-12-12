@@ -32,6 +32,11 @@ public class TacticsMove : MonoBehaviour
     public Tile currentTile;
 
     /// <summary>
+    /// destination tile for THIS if moving
+    /// </summary>
+    public Tile targetTile;
+
+    /// <summary>
     /// 
     /// </summary>
     public List<Tile> path = new List<Tile>();
@@ -96,8 +101,33 @@ public class TacticsMove : MonoBehaviour
             TileManager.list_Units.Add(this);
         }
 
+        targetTile = null;
+
+
+        Init_start();
+
         NewTurn();
         Late_Start();
+    }
+
+    public virtual void Init_start()
+    {
+        if(currentTile == null)
+        {
+            GetCurrentTile();
+        }
+
+        if(currentTile.unitsOnTile != null)
+        {
+            if (!currentTile.unitsOnTile.Contains(this))
+            {
+                currentTile.UnitsOnTile_Add(this);
+            }
+        }
+        
+        // FIX 
+        // transform.position = new Vector3(currentTile.transform.position.x, halfHeight + currentTile.GetComponent<Collider>().bounds.extents.y,currentTile.transform.position.z);
+
     }
 
     /// <summary>
@@ -108,6 +138,17 @@ public class TacticsMove : MonoBehaviour
     public void Update()
     {
         Update_TileMove();
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if(TileManager.selectedUnit != null)
+            {
+                if(TileManager.selectedUnit == this)
+                {
+                    NewTurn();
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -116,6 +157,7 @@ public class TacticsMove : MonoBehaviour
     [ContextMenu("01 - NewTurn")]
     public void NewTurn()
     {
+        Debug.Log("<color=green> NewTurn </color>\n" + this,gameObject);
         remainingMoves = move;
     }
 
@@ -124,7 +166,8 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     protected void Init_TacticsMove()
     {
-        halfHeight = GetComponent<Collider>().bounds.extents.y;
+        // halfHeight = GetComponent<Collider>().bounds.extents.y;
+        halfHeight = 0;
     }
 
     #region BFS
@@ -134,7 +177,7 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public void GetCurrentTile()
     {
-        Debug.Log("<color=yellow> GetCurrentTile </color>\n\n", gameObject);
+        // Debug.Log("<color=yellow> GetCurrentTile </color>\n\n", gameObject);
 
         currentTile = GetTargetTile(gameObject);
         currentTile.current = true;
@@ -150,7 +193,7 @@ public class TacticsMove : MonoBehaviour
         RaycastHit hit;
         Tile tile = null;
 
-        if(Physics.Raycast(target.transform.position, -Vector3.up, out hit, 3))
+        if(Physics.Raycast(target.transform.position, -Vector3.up, out hit, 10))
         {
             tile = hit.collider.GetComponent<Tile>();
         }
@@ -163,7 +206,7 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public void ComputeAdjacencyLists()
     {
-        Debug.Log("<color=yellow> ComputeAdjacencyLists </color>\n\n", gameObject);
+        // Debug.Log("<color=yellow> ComputeAdjacencyLists </color>\n\n", gameObject);
 
         foreach (Tile tile in TileManager.list_Tile)
         {
@@ -173,10 +216,14 @@ public class TacticsMove : MonoBehaviour
 
     public void FindSelectableTiles()
     {
-        Debug.Log("<color=yellow> FindSelectableTiles </color>\n\n",gameObject);
+        // Debug.Log("<color=yellow> FindSelectableTiles </color>\n\n",gameObject);
 
         ComputeAdjacencyLists();
-        GetCurrentTile();
+
+        if(currentTile == null)
+        {
+            GetCurrentTile();
+        }
 
         currentTile.walkable = true;
 
@@ -199,10 +246,25 @@ public class TacticsMove : MonoBehaviour
                 {
                     if (!tile.visited && tile.walkable)
                     {
-                        tile.parent = t;
-                        tile.visited = true;
-                        tile.distance = tile.tileWalkingDistance + t.distance;
-                        process.Enqueue(tile);
+                        if(TileManager.GameMode == EnumGameMode.OneByOne)
+                        {
+                            // if unit is on tile
+                            if(tile.unitsOnTile.Count ==  0)
+                            {
+                                tile.parent = t;
+                                tile.visited = true;
+                                tile.distance = tile.tileWalkingDistance + t.distance;
+                                process.Enqueue(tile);
+                            }
+
+                        }
+                        else
+                        {
+                            tile.parent = t;
+                            tile.visited = true;
+                            tile.distance = tile.tileWalkingDistance + t.distance;
+                            process.Enqueue(tile);
+                        }
                     }
                 }
             }
@@ -225,6 +287,8 @@ public class TacticsMove : MonoBehaviour
             next = next.parent;
         }
 
+        targetTile = tile;
+
         // MOVE !!!
         isMoving = true;
     }
@@ -233,7 +297,7 @@ public class TacticsMove : MonoBehaviour
     {
         pathGhost.Clear();
 
-        TileManager.ResetTile();
+        TileManager.ResetTilePath();
 
         // moving = true;
 
@@ -271,10 +335,28 @@ public class TacticsMove : MonoBehaviour
             //Tile t = path.Peek();
             Tile t = path[path.Count - 1];
 
+            if (t.unitsOnTile != null)
+            {
+                if (!t.unitsOnTile.Contains(this))
+                {
+                    t.UnitsOnTile_Add(this);
+                }
+            }
+
             Vector3 target = t.transform.position;
 
             // calculate the units poisiton on top of target tile
-            target.y += halfHeight + t.GetComponent<Collider>().bounds.extents.y;
+            // if there can be more units on one tile, add them too
+            float unitHeigth = 0;
+            if(t.unitsOnTile != null)
+            {
+                foreach (TacticsMove units in t.unitsOnTile)
+                {
+                    unitHeigth += (units.GetComponent<Collider>().bounds.extents.y * 2);
+                }
+            }
+
+            target.y += unitHeigth + halfHeight + t.GetComponent<Collider>().bounds.extents.y;
 
             if (Vector3.Distance(transform.position, target) >= 0.05f)
             {
@@ -309,31 +391,42 @@ public class TacticsMove : MonoBehaviour
                 // tile center reached
                 transform.position = target;
 
+                currentTile = t;
+
                 if(t.distance > 0)
                 {
-                    remainingMoves--;
+                    remainingMoves -= t.tileWalkingDistance;
                 }
+
+                t.UnitsOnTile_Remove(this);
 
                 path.Remove(t);
             }
         }
         else
         {
-
             // target has been reached
-
-            TileManager.ResetTile();
-
             isMoving = false;
 
-            GetCurrentTile();
+            RemoveSelectableTiles();
 
+            currentTile = targetTile;
+            targetTile = null;
+
+            TileManager.ResetTilePath();
+
+            if (currentTile.unitsOnTile != null)
+            {
+                if (!currentTile.unitsOnTile.Contains(this))
+                {
+                    currentTile.UnitsOnTile_Add(this);
+                }
+            }
 
             // transform.forward = new Vector3( Mathf.Clamp(heading.x, 0, 1), 0 ,Mathf.Clamp(heading.z,0,1));
 
-            currentTile.walkable = false;
+            // currentTile.walkable = false;
 
-            RemoveSelectableTiles();
 
             TileManager.selectedUnit = null;
             TileManager.selectedTile = null;
@@ -342,6 +435,8 @@ public class TacticsMove : MonoBehaviour
             TileManager.UpdateTileColor(false);
 
         }
+
+        
     }
 
     private void CalculateHeading(Vector3 target)
@@ -458,7 +553,7 @@ public class TacticsMove : MonoBehaviour
 
 
     /// <summary>
-    /// 
+    /// reset currentTile , tile.Reset and clear selectable tiles
     /// </summary>
     protected void RemoveSelectableTiles()
     {
