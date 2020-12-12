@@ -10,8 +10,8 @@ public enum EnumGameMode { OneByOne, AllByOne };
 
 public class TileManager : MonoBehaviour
 {
-    [Tooltip("OneByOne - player end turn after moving one unit\nAllByOne - player end turn after moving all units")]
-    public EnumGameMode GameMode;
+    [Tooltip("OneByOne - player end turn after moving one unit\nAllByOne - player end turn after moving all units, multiple units on one tile")]
+    public static EnumGameMode GameMode;
 
     /// <summary>
     /// list of all tiles presenting map
@@ -35,8 +35,21 @@ public class TileManager : MonoBehaviour
 
     private void Awake()
     {
+        GameMode = EnumGameMode.OneByOne;
+
         list_Tile.Clear();
         list_Units.Clear();
+    }
+
+    /// <summary>
+    /// foreach Tile isPath = false
+    /// </summary>
+    public static void ResetTile()
+    {
+        foreach (Tile tile in list_Tile)
+        {
+            tile.isPath = false;
+        }
     }
 
 

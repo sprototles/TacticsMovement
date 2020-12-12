@@ -32,14 +32,24 @@ public class TacticsMove : MonoBehaviour
     public Tile currentTile;
 
     /// <summary>
-    /// path of tiles from current to target
+    /// 
     /// </summary>
-    public Stack<Tile> path = new Stack<Tile>();
+    public List<Tile> path = new List<Tile>();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public List<Tile> pathGhost = new List<Tile>();
 
     /// <summary>
     /// max distance unit can move
     /// </summary>
     public int move = 8;
+
+    /// <summary>
+    /// <= move ; reset in NewTurn
+    /// </summary>
+    public int remainingMoves;
 
     /// <summary>
     /// 
@@ -86,6 +96,7 @@ public class TacticsMove : MonoBehaviour
             TileManager.list_Units.Add(this);
         }
 
+        NewTurn();
         Late_Start();
     }
 
@@ -97,6 +108,15 @@ public class TacticsMove : MonoBehaviour
     public void Update()
     {
         Update_TileMove();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [ContextMenu("01 - NewTurn")]
+    public void NewTurn()
+    {
+        remainingMoves = move;
     }
 
     /// <summary>
@@ -173,7 +193,7 @@ public class TacticsMove : MonoBehaviour
             selectableTiles.Add(t);
             t.selectable = true;
 
-            if(t.distance < move)
+            if(t.distance < remainingMoves)
             {
                 foreach (Tile tile in t.adjacencyList)
                 {
@@ -191,7 +211,7 @@ public class TacticsMove : MonoBehaviour
 
     public void MoveToTile(Tile tile)
     {
-        Debug.Log("<color=yellow> GetTargetTile </color>\n tile = " + tile + "\n", gameObject);
+        Debug.Log("<color=yellow> MoveToTile </color>\n tile = " + tile + "\n", gameObject);
 
         path.Clear();
 
@@ -201,17 +221,35 @@ public class TacticsMove : MonoBehaviour
 
         while(next != null)
         {
-            path.Push(next);
+            path.Add(next);
             next = next.parent;
         }
 
         // MOVE !!!
         isMoving = true;
-
     }
 
+    public void MoveToTileGhost(Tile tile)
+    {
+        pathGhost.Clear();
+
+        TileManager.ResetTile();
+
+        // moving = true;
+
+        Tile next = tile;
+
+        while (next != null)
+        {
+            pathGhost.Add(next);
+            next.isPath = true;
+            next = next.parent;
+        }
+    }
+
+
     /// <summary>
-    /// 
+    /// Update()
     /// </summary>
     public void Update_TileMove()
     {
@@ -226,10 +264,12 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public void Move()
     {
-        if(path.Count > 0)
+        // if (path.Count > 0)
+        if (path.Count > 0)
         {
             // is moving to target tile
-            Tile t = path.Peek();
+            //Tile t = path.Peek();
+            Tile t = path[path.Count - 1];
 
             Vector3 target = t.transform.position;
 
@@ -258,22 +298,38 @@ public class TacticsMove : MonoBehaviour
                 CalculateHeading(target);
                 SetHorizontalVelocity();
 
-                transform.forward = heading;
+                // transform.forward = heading;
                 transform.position += velocity * Time.deltaTime;
             }
             else
             {
+
+                Debug.Log("<color=yellow> Move </color>\n Tile center reached\n Tile: " + t , gameObject);
+
                 // tile center reached
                 transform.position = target;
-                path.Pop();
+
+                if(t.distance > 0)
+                {
+                    remainingMoves--;
+                }
+
+                path.Remove(t);
             }
         }
         else
         {
+
             // target has been reached
+
+            TileManager.ResetTile();
+
             isMoving = false;
 
             GetCurrentTile();
+
+
+            // transform.forward = new Vector3( Mathf.Clamp(heading.x, 0, 1), 0 ,Mathf.Clamp(heading.z,0,1));
 
             currentTile.walkable = false;
 
@@ -443,10 +499,19 @@ public class TacticsMove : MonoBehaviour
     {
         Debug.Log("<color=yellow> OnLeftMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
 
+        if(TileManager.selectedUnit != null)
+        {
+            if(TileManager.selectedUnit != this && TileManager.selectedUnit.isMoving)
+            {
+                // dont do anything if some unit is moving
+                return;
+            }
+        }
+
         FindSelectableTiles();
 
-        TileManager.UpdateTileColor(true);
         TileManager.selectedUnit = this;
+        TileManager.UpdateTileColor(true);
 
     }
     private void OnRightMouseClick()

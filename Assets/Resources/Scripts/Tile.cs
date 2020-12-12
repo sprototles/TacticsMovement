@@ -34,6 +34,11 @@ public class Tile : MonoBehaviour
     public bool selectable = false;
 
     /// <summary>
+    /// 
+    /// </summary>
+    public bool isPath = false;
+
+    /// <summary>
     /// [tileWalkingDistance] how much distance will it take to cross THIS tile
     /// </summary>
     public int tileWalkingDistance;
@@ -198,7 +203,7 @@ public class Tile : MonoBehaviour
         {
             material.color = Color.grey;
         }
-        else if (target)
+        else if (target || isPath)  // fix
         {
             material.color = Color.green;
         }
@@ -277,6 +282,21 @@ public class Tile : MonoBehaviour
 
     private void OnMouseOver()
     {
+        if(TileManager.selectedUnit != null)
+        {
+            if (!TileManager.selectedUnit.isMoving)
+            {
+                TileManager.UpdateTileColor(true);
+
+                // selected unit move to this tile
+
+                TileManager.selectedUnit.MoveToTileGhost(this);
+            }
+        }
+
+
+
+
         // Left mouse button
         if (Input.GetMouseButtonDown(0))
         {
