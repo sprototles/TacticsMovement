@@ -16175,6 +16175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9364fc0b23218e04fbdbc935a6ae14f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileManager: {fileID: 1697666078}
   identifier: 0
   playerID: 0
   selectableTiles: []
@@ -25122,6 +25123,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9364fc0b23218e04fbdbc935a6ae14f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileManager: {fileID: 1697666078}
   identifier: 0
   playerID: 1
   selectableTiles: []
@@ -32036,6 +32038,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9364fc0b23218e04fbdbc935a6ae14f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileManager: {fileID: 1697666078}
   identifier: 0
   playerID: 0
   selectableTiles: []

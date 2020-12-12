@@ -26,7 +26,17 @@ public class TileManager : MonoBehaviour
     /// <summary>
     /// selected unit for movement
     /// </summary>
-    public static TacticsMove selectedUnit;
+    public static List<TacticsMove> list_SelectedUnits =  new List<TacticsMove>();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public List<TacticsMove> list_publicSelectedUnits = new List<TacticsMove>();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool someUnitIsMoving = false;
 
     /// <summary>
     /// 
@@ -47,6 +57,11 @@ public class TileManager : MonoBehaviour
         Debug.Log("<color=green> TileManager \n Start()  </color>\n GameMode = " + GameMode,gameObject);
     }
 
+    public static void UnitAwake()
+    {
+
+    }
+
     /// <summary>
     /// foreach Tile isPath = false
     /// </summary>
@@ -55,6 +70,14 @@ public class TileManager : MonoBehaviour
         foreach (Tile tile in list_Tile)
         {
             tile.isPath = false;
+        }
+    }
+
+    public static void DeselectUnits()
+    {
+        foreach(TacticsMove unit in list_Units)
+        {
+            unit.unitIsSelected = false;
         }
     }
 
@@ -76,6 +99,24 @@ public class TileManager : MonoBehaviour
                 tile.SetTileColor_Enum();
             }
         }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unit"></param>
+    public static void SelectedUnit_Add(TacticsMove unit)
+    {
+        list_SelectedUnits.Add(unit);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="unit"></param>
+    public static void SelectedUnit_Remove(TacticsMove unit)
+    {
+        list_SelectedUnits.Remove(unit);
     }
 
     #region Editor

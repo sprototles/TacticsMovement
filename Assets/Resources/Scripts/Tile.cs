@@ -11,6 +11,8 @@ public class Tile : MonoBehaviour
 {
     public EnumTileType enumTileType;
 
+    public TileManager tileManager;
+
     public List<TacticsMove> unitsOnTile = new List<TacticsMove>();
 
     #region Movement
@@ -92,6 +94,13 @@ public class Tile : MonoBehaviour
         {
             if ((material = render.material) == null)
                 Debug.LogError("material", gameObject);
+        }
+
+
+        if (tileManager == null)
+        {
+            if ((tileManager = GameObject.Find("TileManager").GetComponent<TileManager>()) == null)
+                Debug.LogError("tileManager", gameObject);
         }
 
         // clear list
@@ -314,18 +323,31 @@ public class Tile : MonoBehaviour
 
     private void OnMouseOver()
     {
-        if(TileManager.selectedUnit != null)
+        /*
+        if(TileManager.list_SelectedUnits != null)
         {
-            if (!TileManager.selectedUnit.isMoving)
+            if (!TileManager.list_SelectedUnits.isMoving)
             {
                 TileManager.UpdateTileColor(true);
 
                 // selected unit move to this tile
 
-                TileManager.selectedUnit.MoveToTileGhost(this);
+                TileManager.list_SelectedUnits[0].MoveToTileGhost(this);
             }
         }
+        */
 
+        if (TileManager.list_SelectedUnits != null)
+        {
+            if (!TileManager.someUnitIsMoving)
+            {
+                TileManager.UpdateTileColor(true);
+
+                // pick only 
+
+                TileManager.list_SelectedUnits[0].MoveToTileGhost(this);
+            }
+        }
 
 
 
@@ -347,9 +369,9 @@ public class Tile : MonoBehaviour
         Debug.Log("<color=yellow> OnLeftMouseClick </color>\n Tile " + this + " \n", gameObject);
 
         // check if some unit was selected 
-        if (TileManager.selectedUnit != null)
+        if (TileManager.list_SelectedUnits != null)
         {
-            if (!TileManager.selectedUnit.isMoving)
+            if (!TileManager.someUnitIsMoving)
             {
                 // check if some tile was selected before and reset its status
                 if (TileManager.selectedTile != null)
@@ -372,7 +394,7 @@ public class Tile : MonoBehaviour
 
                     // selected unit move to this tile
 
-                    TileManager.selectedUnit.MoveToTile(this);
+                    TileManager.list_SelectedUnits[0].MoveToTile(this);
 
                 }
             }
@@ -385,9 +407,12 @@ public class Tile : MonoBehaviour
     {
         Debug.Log("<color=yellow> OnRightMouseClick </color>\n Tile " + this +" \n", gameObject);
 
-        TileManager.selectedUnit = null;
+        TileManager.list_SelectedUnits = null;
         TileManager.selectedTile = null;
         TileManager.UpdateTileColor(false);
+
+        // all units are deselected
+        TileManager.DeselectUnits();
     }
 
     #endregion

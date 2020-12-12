@@ -7,10 +7,12 @@ using UnityEngine;
 /// </summary>
 public class TacticsMove : MonoBehaviour
 {
+    [Header("Internal data")]
+    public TileManager tileManager = null;
+
     /// <summary>
     /// identifier must be unique for every TacticsMove object
     /// </summary>
-    [Header("Internal data")]
     public int identifier;
 
     internal readonly List<Color> list_Color = new List<Color> {Color.yellow, Color.cyan, Color.red, Color.green, Color.blue };
@@ -88,7 +90,11 @@ public class TacticsMove : MonoBehaviour
     public Vector3 velocity = new Vector3();
     public Vector3 heading = new Vector3();
     public Vector3 jumpTarget = new Vector3();
-    
+
+    /// <summary>
+    /// when player select THIS unit or tile on THIS unit = TRUE
+    /// </summary>
+    public bool unitIsSelected = false;
 
     [Header("Graphics")]
     public Renderer render;
@@ -96,20 +102,36 @@ public class TacticsMove : MonoBehaviour
 
     private void Start()
     {
+        // add to static list
         if (!TileManager.list_Units.Contains(this))
         {
             TileManager.list_Units.Add(this);
+            TileManager.UnitAwake();
         }
 
+        // INIT variables
         targetTile = null;
+        unitIsSelected = false;
+
+        // assign tileManager
+        if (tileManager == null)
+        {
+            if ((tileManager = GameObject.Find("TileManager").GetComponent<TileManager>()) == null)
+                Debug.LogError("tileManager", gameObject);
+        }
 
 
         Init_start();
 
+        // reset remaining moves to Max
         NewTurn();
+
         Late_Start();
     }
 
+    /// <summary>
+    /// get currentTile and add THIS unit on current tile
+    /// </summary>
     public virtual void Init_start()
     {
         if(currentTile == null)
@@ -141,13 +163,22 @@ public class TacticsMove : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if(TileManager.selectedUnit != null)
+            if(tileManager.list_publicSelectedUnits != null)
             {
-                if(TileManager.selectedUnit == this)
+                if (tileManager.list_publicSelectedUnits.Contains(this))
                 {
                     NewTurn();
                 }
             }
+            /*
+            if(TileManager.list_SelectedUnits != null)
+            {
+                if(TileManager.list_SelectedUnits.Contains(this))
+                {
+                    NewTurn();
+                }
+            }
+            */
         }
     }
 
@@ -291,6 +322,7 @@ public class TacticsMove : MonoBehaviour
 
         // MOVE !!!
         isMoving = true;
+        TileManager.someUnitIsMoving = true;
     }
 
     public void MoveToTileGhost(Tile tile)
@@ -317,7 +349,7 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public void Update_TileMove()
     {
-        if (isMoving)
+        if (isMoving && TileManager.someUnitIsMoving)
         {
             Move();
         }
@@ -407,6 +439,7 @@ public class TacticsMove : MonoBehaviour
         {
             // target has been reached
             isMoving = false;
+            TileManager.someUnitIsMoving = false;
 
             RemoveSelectableTiles();
 
@@ -428,7 +461,7 @@ public class TacticsMove : MonoBehaviour
             // currentTile.walkable = false;
 
 
-            TileManager.selectedUnit = null;
+            TileManager.list_SelectedUnits = null;
             TileManager.selectedTile = null;
 
             // update map color
@@ -594,19 +627,43 @@ public class TacticsMove : MonoBehaviour
     {
         Debug.Log("<color=yellow> OnLeftMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
 
-        if(TileManager.selectedUnit != null)
+        // check if last selected unit is moving
+
+        if (TileManager.someUnitIsMoving)
         {
-            if(TileManager.selectedUnit != this && TileManager.selectedUnit.isMoving)
+            return;
+        }
+
+        int shortestDistance =  remainingMoves;
+
+        if (currentTile.unitsOnTile.Count == 1)
+        {
+            // only one unit is on tile
+            TileManager.list_SelectedUnits.Clear();
+            tileManager.list_publicSelectedUnits.Clear();
+        }
+        else
+        {
+            // more units are on tile, get shortest distance available for this group of units
+            foreach(TacticsMove units in tileManager.list_publicSelectedUnits)
             {
-                // dont do anything if some unit is moving
-                return;
+                if(units.remainingMoves < shortestDistance)
+                {
+                    shortestDistance = units.remainingMoves;
+                }
             }
         }
 
+        // TODO: if multiple units are selected, find smallest distance to walk and apply
         FindSelectableTiles();
 
-        TileManager.selectedUnit = this;
+        // TODO: add THIS unit or all units in THIS group to tileManager.selectedUnits
+        TileManager.SelectedUnit_Add(this);
+
         TileManager.UpdateTileColor(true);
+
+        // TODO: do for all selected units
+        unitIsSelected = true;
 
     }
     private void OnRightMouseClick()
@@ -614,7 +671,12 @@ public class TacticsMove : MonoBehaviour
         Debug.Log("<color=yellow> OnRightMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
 
         TileManager.UpdateTileColor(false);
-        TileManager.selectedUnit = null;
+
+        // TODO: make all selected units unselected
+        // check if do for all or only THIS
+        TileManager.list_SelectedUnits = null;
+
+        TileManager.DeselectUnits();
     }
 
     #endregion
