@@ -8,7 +8,7 @@ using UnityEngine;
 public class TacticsMove : MonoBehaviour
 {
     [Header("Internal data")]
-    public TileManager tileManager = null;
+    // public TileManager tileManager = null;
 
     /// <summary>
     /// identifier must be unique for every TacticsMove object
@@ -20,33 +20,34 @@ public class TacticsMove : MonoBehaviour
     /// <summary>
     /// units with same ID are controlled with same player
     /// </summary>
+    [Tooltip("OneByOne - player end turn after moving one unit, only one unit on one tile, tile2tile interaction\nAllByOne - player end turn after moving all units, multiple units on one tile")]
     public int playerID;
 
     /// <summary>
     /// list of tiles accesible to THIS object
     /// </summary>
     [Header("Movement")]
-    public List<Tile> selectableTiles = new List<Tile>();
+    public List<TileTemplate> selectableTiles = new List<TileTemplate>();
 
     /// <summary>
     /// tile under THIS unit
     /// </summary>
-    public Tile currentTile;
+    public TileTemplate currentTile;
 
     /// <summary>
     /// destination tile for THIS if moving
     /// </summary>
-    public Tile targetTile;
+    public TileTemplate targetTile;
 
     /// <summary>
     /// 
     /// </summary>
-    public List<Tile> path = new List<Tile>();
+    public List<TileTemplate> path = new List<TileTemplate>();
 
     /// <summary>
     /// 
     /// </summary>
-    public List<Tile> pathGhost = new List<Tile>();
+    public List<TileTemplate> pathGhost = new List<TileTemplate>();
 
     /// <summary>
     /// max distance unit can move
@@ -103,23 +104,24 @@ public class TacticsMove : MonoBehaviour
     private void Start()
     {
         // add to static list
-        if (!TileManager.list_Units.Contains(this))
+        if (!TileManager_Template.list_Units.Contains(this))
         {
-            TileManager.list_Units.Add(this);
-            TileManager.UnitAwake();
+            TileManager_Template.list_Units.Add(this);
+            TileManager_Template.UnitAwake();
         }
 
         // INIT variables
         targetTile = null;
         unitIsSelected = false;
 
+        /*
         // assign tileManager
         if (tileManager == null)
         {
             if ((tileManager = GameObject.Find("TileManager").GetComponent<TileManager>()) == null)
                 Debug.LogError("tileManager", gameObject);
         }
-
+        */
 
         Init_start();
 
@@ -163,6 +165,7 @@ public class TacticsMove : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            /*
             if(tileManager.list_publicSelectedUnits != null)
             {
                 if (tileManager.list_publicSelectedUnits.Contains(this))
@@ -170,15 +173,16 @@ public class TacticsMove : MonoBehaviour
                     NewTurn();
                 }
             }
-            /*
-            if(TileManager.list_SelectedUnits != null)
+            */
+            
+            if(TileManager_Template.selectedUnit != null)
             {
-                if(TileManager.list_SelectedUnits.Contains(this))
+                if(TileManager_Template.selectedUnit == this)
                 {
                     NewTurn();
                 }
             }
-            */
+            
         }
     }
 
@@ -217,16 +221,16 @@ public class TacticsMove : MonoBehaviour
 
     }
 
-    public Tile GetTargetTile(GameObject target)
+    public TileTemplate GetTargetTile(GameObject target)
     {
         // Debug.Log("<color=yellow> GetTargetTile </color>\n target = " + target + "\n", gameObject);
 
         RaycastHit hit;
-        Tile tile = null;
+        TileTemplate tile = null;
 
         if(Physics.Raycast(target.transform.position, -Vector3.up, out hit, 10))
         {
-            tile = hit.collider.GetComponent<Tile>();
+            tile = hit.collider.GetComponent<TileTemplate>();
         }
 
         return tile;
@@ -239,7 +243,7 @@ public class TacticsMove : MonoBehaviour
     {
         // Debug.Log("<color=yellow> ComputeAdjacencyLists </color>\n\n", gameObject);
 
-        foreach (Tile tile in TileManager.list_Tile)
+        foreach (TileTemplate tile in TileManager_Template.list_Tile)
         {
             tile.Reset();
         }
@@ -258,7 +262,7 @@ public class TacticsMove : MonoBehaviour
 
         currentTile.walkable = true;
 
-        Queue<Tile> process = new Queue<Tile>();
+        Queue<TileTemplate> process = new Queue<TileTemplate>();
 
         process.Enqueue(currentTile);
 
@@ -266,43 +270,28 @@ public class TacticsMove : MonoBehaviour
 
         while(process.Count > 0)
         {
-            Tile t = process.Dequeue();
+            TileTemplate t = process.Dequeue();
 
             selectableTiles.Add(t);
             t.selectable = true;
 
             if(t.distance < remainingMoves)
             {
-                foreach (Tile tile in t.adjacencyList)
+                foreach (TileTemplate tile in t.adjacencyList)
                 {
                     if (!tile.visited && tile.walkable)
                     {
-                        if(TileManager.GameMode == EnumGameMode.OneByOne)
-                        {
-                            // if unit is on tile
-                            if(tile.unitsOnTile.Count ==  0)
-                            {
-                                tile.parent = t;
-                                tile.visited = true;
-                                tile.distance = tile.tileWalkingDistance + t.distance;
-                                process.Enqueue(tile);
-                            }
-
-                        }
-                        else
-                        {
-                            tile.parent = t;
-                            tile.visited = true;
-                            tile.distance = tile.tileWalkingDistance + t.distance;
-                            process.Enqueue(tile);
-                        }
+                        tile.parent = t;
+                        tile.visited = true;
+                        tile.distance = tile.tileWalkingDistance + t.distance;
+                        process.Enqueue(tile);
                     }
                 }
             }
         }
     }
 
-    public void MoveToTile(Tile tile)
+    public void MoveToTile(TileTemplate tile)
     {
         Debug.Log("<color=yellow> MoveToTile </color>\n tile = " + tile + "\n", gameObject);
 
@@ -310,7 +299,7 @@ public class TacticsMove : MonoBehaviour
 
         // moving = true;
 
-        Tile next = tile;
+        TileTemplate next = tile;
 
         while(next != null)
         {
@@ -322,18 +311,18 @@ public class TacticsMove : MonoBehaviour
 
         // MOVE !!!
         isMoving = true;
-        TileManager.someUnitIsMoving = true;
+        TileManager_Template.someUnitIsMoving = true;
     }
 
-    public void MoveToTileGhost(Tile tile)
+    public void MoveToTileGhost(TileTemplate tile)
     {
         pathGhost.Clear();
 
-        TileManager.ResetTilePath();
+        TileManager_Template.ResetTilePath();
 
         // moving = true;
 
-        Tile next = tile;
+        TileTemplate next = tile;
 
         while (next != null)
         {
@@ -349,7 +338,7 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public void Update_TileMove()
     {
-        if (isMoving && TileManager.someUnitIsMoving)
+        if (isMoving && TileManager_Template.someUnitIsMoving)
         {
             Move();
         }
@@ -365,7 +354,7 @@ public class TacticsMove : MonoBehaviour
         {
             // is moving to target tile
             //Tile t = path.Peek();
-            Tile t = path[path.Count - 1];
+            TileTemplate t = path[path.Count - 1];
 
             if (t.unitsOnTile != null)
             {
@@ -439,14 +428,14 @@ public class TacticsMove : MonoBehaviour
         {
             // target has been reached
             isMoving = false;
-            TileManager.someUnitIsMoving = false;
+            TileManager_Template.someUnitIsMoving = false;
 
             RemoveSelectableTiles();
 
             currentTile = targetTile;
             targetTile = null;
 
-            TileManager.ResetTilePath();
+            TileManager_Template.ResetTilePath();
 
             if (currentTile.unitsOnTile != null)
             {
@@ -461,11 +450,11 @@ public class TacticsMove : MonoBehaviour
             // currentTile.walkable = false;
 
 
-            TileManager.list_SelectedUnits = null;
-            TileManager.selectedTile = null;
+            TileManager_Template.selectedUnit = null;
+            TileManager_Template.selectedTile = null;
 
             // update map color
-            TileManager.UpdateTileColor(false);
+            TileManager_Template.UpdateTileColor(false);
 
         }
 
@@ -596,7 +585,7 @@ public class TacticsMove : MonoBehaviour
             currentTile = null;
         }
 
-        foreach(Tile tile in selectableTiles)
+        foreach(TileTemplate tile in selectableTiles)
         {
             tile.Reset();
         }
@@ -629,7 +618,7 @@ public class TacticsMove : MonoBehaviour
 
         // check if last selected unit is moving
 
-        if (TileManager.someUnitIsMoving)
+        if (TileManager_Template.someUnitIsMoving)
         {
             return;
         }
@@ -639,11 +628,14 @@ public class TacticsMove : MonoBehaviour
         if (currentTile.unitsOnTile.Count == 1)
         {
             // only one unit is on tile
-            TileManager.list_SelectedUnits.Clear();
-            tileManager.list_publicSelectedUnits.Clear();
+            // TileManager.selectedUnit.Clear();
+            // TileManager.selectedUnit = null;
+            TileManager_Template.SelectedUnit(null);
+            // tileManager.list_publicSelectedUnits.Clear();
         }
         else
         {
+            /*
             // more units are on tile, get shortest distance available for this group of units
             foreach(TacticsMove units in tileManager.list_publicSelectedUnits)
             {
@@ -652,15 +644,18 @@ public class TacticsMove : MonoBehaviour
                     shortestDistance = units.remainingMoves;
                 }
             }
+            */
         }
 
         // TODO: if multiple units are selected, find smallest distance to walk and apply
         FindSelectableTiles();
 
         // TODO: add THIS unit or all units in THIS group to tileManager.selectedUnits
-        TileManager.SelectedUnit_Add(this);
+        // TileManager.SelectedUnit_Add(this);
+        TileManager_Template.selectedUnit = this;
+        TileManager_Template.SelectedUnit(this);
 
-        TileManager.UpdateTileColor(true);
+        TileManager_Template.UpdateTileColor(true);
 
         // TODO: do for all selected units
         unitIsSelected = true;
@@ -670,13 +665,13 @@ public class TacticsMove : MonoBehaviour
     {
         Debug.Log("<color=yellow> OnRightMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
 
-        TileManager.UpdateTileColor(false);
+        TileManager_Template.UpdateTileColor(false);
 
         // TODO: make all selected units unselected
         // check if do for all or only THIS
-        TileManager.list_SelectedUnits = null;
+        TileManager_Template.selectedUnit = null;
 
-        TileManager.DeselectUnits();
+        TileManager_Template.DeselectUnits();
     }
 
     #endregion
