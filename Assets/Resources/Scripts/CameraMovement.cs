@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
+    public GameObject cameraPlaceholder;
+
     /// <summary>
     /// GameObject for Position
     /// </summary>
@@ -56,6 +58,13 @@ public class CameraMovement : MonoBehaviour
 
     public float movementMultiplier = 0.5f;
 
+    private void OnGUI()
+    {
+        if (mainCamera.isActiveAndEnabled)
+        {
+            GUI.Box(new Rect(0, 0, 100, 30), cameraPlaceholder.name);
+        }
+    }
 
     private void Awake()
     {

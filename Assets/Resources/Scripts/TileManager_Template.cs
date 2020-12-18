@@ -8,12 +8,12 @@ public class TileManager_Template : MonoBehaviour
     /// <summary>
     /// list of all tiles presenting map
     /// </summary>
-    public static List<TileTemplate> list_Tile = new List<TileTemplate>();
+    public static List<Tile_Template> list_Tile = new List<Tile_Template>();
 
     /// <summary>
     /// target tile for selected unit
     /// </summary>
-    public static TileTemplate selectedTile;
+    public static Tile_Template selectedTile;
 
     /// <summary>
     /// selected unit for movement
@@ -59,18 +59,26 @@ public class TileManager_Template : MonoBehaviour
 
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Debug.Log(" " + this + "\ntile_List + " + list_Tile.Count + "\n",gameObject);
+        }
+    }
+
     /// <summary>
     /// foreach Tile isPath = false
     /// </summary>
     public static void ResetTilePath()
     {
-        foreach (TileTemplate tile in list_Tile)
+        foreach (Tile_Template tile in list_Tile)
         {
             tile.isPath = false;
         }
     }
 
-    public static void DeselectUnits()
+    public virtual void DeselectUnits()
     {
         foreach(TacticsMove unit in list_Units)
         {
@@ -91,9 +99,9 @@ public class TileManager_Template : MonoBehaviour
     /// TRUE = movement, FALSE = enum color
     /// </summary>
     /// <param name="status"></param>
-    public static void UpdateTileColor(bool status)
+    public void UpdateTileColor(bool status)
     {
-        foreach (TileTemplate tile in list_Tile)
+        foreach (Tile_Template tile in list_Tile)
         {
             if (status)
             {
@@ -119,8 +127,8 @@ public class TileManager_Template : MonoBehaviour
 
         foreach(GameObject go in arrayGo)
         {
-            go.GetComponent<TileTemplate>().SetTileEnum();
-            go.GetComponent<TileTemplate>().SetTileColor_Enum();
+            go.GetComponent<Tile_Template>().SetTileEnum();
+            go.GetComponent<Tile_Template>().SetTileColor_Enum();
         }
     }
     #endregion

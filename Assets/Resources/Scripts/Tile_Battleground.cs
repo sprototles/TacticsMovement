@@ -7,9 +7,8 @@ using UnityEngine;
 /// </summary>
 public enum EnumTileType_Battleground { None, Grass, Sand, Tree, Wall, Swamp, Stone }
 
-public class TileTemplate_Battleground : TileTemplate
+public class Tile_Battleground : Tile_Template
 {
-
     public EnumTileType_Battleground enumTileType_Battleground;
 
     public TileManager_Battleground tileManager_Battleground;
@@ -18,15 +17,27 @@ public class TileTemplate_Battleground : TileTemplate
 
     public override void Init_Awake()
     {
-        base.Init_Awake();
+        if(!CompareTag("Tile_Battleground"))
+        {
+            tag = "Tile_Battleground";
+        }
 
         if (tileManager_Battleground == null)
         {
             if ((tileManager_Battleground = GameObject.Find("TileManager_Battleground").GetComponent<TileManager_Battleground>()) == null)
-                Debug.LogError("tileManager_Battleground", gameObject);
+                Debug.LogError("TileManager_Battleground", gameObject);
         }
 
+    }
 
+    public override void Init_Start()
+    {
+        if (!tileManager_Battleground.list_TileBattleground.Contains(this))
+        {
+            tileManager_Battleground.list_TileBattleground.Add(this);
+        }
+
+        base.Init_Start();
     }
 
     #endregion
@@ -38,8 +49,6 @@ public class TileTemplate_Battleground : TileTemplate
     /// </summary>
     public override void SetTileEnum()
     {
-        base.SetTileEnum();
-
         if (transform.localPosition.y < -0.2)
         {
             enumTileType_Battleground = EnumTileType_Battleground.Swamp;
@@ -76,15 +85,10 @@ public class TileTemplate_Battleground : TileTemplate
             walkable = false;
             tileWalkingDistance = 99;
         }
-
-
     }
 
     public override void SetTileColor_Enum()
     {
-        base.SetTileColor_Enum();
-
-
         if (material == null)
         {
             render = GetComponent<Renderer>();
@@ -124,14 +128,14 @@ public class TileTemplate_Battleground : TileTemplate
     {
         base.OnMouseOverTile();
 
-        if (TileManager_Battleground.selectedUnit != null)
+        if (tileManager_Battleground.selectedUnit_Battleground != null)
         {
-            if (!TileManager_Battleground.someUnitIsMoving)
+            if (!tileManager_Battleground.someUnitIsMoving_Battleground)
             {
-                TileManager_Battleground.UpdateTileColor(true);
+                tileManager_Battleground.UpdateTileColor(true);
 
                 // pick only 
-                TileManager_Battleground.selectedUnit.MoveToTileGhost(this);
+                tileManager_Battleground.selectedUnit_Battleground.MoveToTileGhost(this);
             }
         }
 
@@ -142,36 +146,40 @@ public class TileTemplate_Battleground : TileTemplate
         base.OnLeftMouseClick();
 
         // check if some unit was selected 
-        if (TileManager_Battleground.selectedUnit != null)
+        if (tileManager_Battleground.selectedUnit_Battleground != null)
         {
-            if (!TileManager_Battleground.someUnitIsMoving)
+            if (!tileManager_Battleground.someUnitIsMoving_Battleground)
             {
                 // check if some tile was selected before and reset its status
-                if (TileManager_Battleground.selectedTile != null)
+                if (tileManager_Battleground.selectedTile_Battleground != null)
                 {
                     // check if selected tile is THIS or not
-                    if (TileManager_Battleground.selectedTile != this)
+                    if (tileManager_Battleground.selectedTile_Battleground != this)
                     {
-                        TileManager_Battleground.selectedTile.target = false;
+                        tileManager_Battleground.selectedTile_Battleground.target = false;
                     }
                 }
 
-                TileManager_Battleground.selectedTile = this;
+                tileManager_Battleground.selectedTile_Battleground = this;
 
                 // can unit move to this tile ?
                 if (selectable)
                 {
                     target = true;
 
-                    TileManager_Battleground.UpdateTileColor(true);
+                    tileManager_Battleground.UpdateTileColor(true);
 
                     // selected unit move to this tile
 
-                    TileManager_Battleground.selectedUnit.MoveToTile(this);
+                    tileManager_Battleground.selectedUnit_Battleground.MoveToTile(this);
 
                 }
             }
 
+        }
+        else
+        {
+            tileManager_Battleground.selectedTile_Battleground = this;
         }
     }
 
@@ -182,13 +190,13 @@ public class TileTemplate_Battleground : TileTemplate
 
 
         // TileManager.selectedUnit = null;
-        TileManager_Battleground.SelectedUnit(null);
+        tileManager_Battleground.selectedUnit_Battleground = null;
 
-        TileManager_Battleground.selectedTile = null;
-        TileManager_Battleground.UpdateTileColor(false);
+        tileManager_Battleground.selectedTile_Battleground = null;
+        tileManager_Battleground.UpdateTileColor(false);
 
         // all units are deselected
-        TileManager_Battleground.DeselectUnits();
+        tileManager_Battleground.DeselectUnits();
     }
 
 

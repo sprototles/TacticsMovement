@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TileTemplate : MonoBehaviour
+public class Tile_Template : MonoBehaviour
 {
     public List<TacticsMove> unitsOnTile = new List<TacticsMove>();
 
@@ -46,7 +46,7 @@ public class TileTemplate : MonoBehaviour
     /// <summary>
     /// list of (side, not edge) neighour tiles to THIS tile
     /// </summary>
-    public List<TileTemplate> adjacencyList = new List<TileTemplate>();
+    public List<Tile_Template> adjacencyList = new List<Tile_Template>();
 
     // BFS (breadth first search)
 
@@ -58,7 +58,7 @@ public class TileTemplate : MonoBehaviour
     /// <summary>
     /// req. for generating path
     /// </summary>
-    public TileTemplate parent = null;
+    public Tile_Template parent = null;
 
 
 
@@ -90,8 +90,13 @@ public class TileTemplate : MonoBehaviour
 
         // clear list
         adjacencyList.Clear();
+
+        Init_Awake();
     }
 
+    /// <summary>
+    /// assign tile to tileManager
+    /// </summary>
     public virtual void Init_Awake()
     {
 
@@ -109,12 +114,6 @@ public class TileTemplate : MonoBehaviour
     /// </summary>
     public virtual void Init_Start()
     {
-
-        if (!TileManager_Template.list_Tile.Contains(this))
-        {
-            TileManager_Template.list_Tile.Add(this);
-        }
-
         SetTileEnum();
 
         SetTileColor_Enum();
@@ -128,16 +127,12 @@ public class TileTemplate : MonoBehaviour
     /// <summary>
     /// set Enum based on tile Y position
     /// </summary>
-    public virtual void SetTileEnum()
-    {
-    }
+    public virtual void SetTileEnum(){}
 
     /// <summary>
     /// set color based on enum
     /// </summary>
-    public virtual void SetTileColor_Enum()
-    {
-    }
+    public virtual void SetTileColor_Enum(){}
 
     /// <summary>
     /// 
@@ -216,11 +211,11 @@ public class TileTemplate : MonoBehaviour
 
         Collider[] colliders = Physics.OverlapBox(transform.position + direction,halfExtends);
 
-        TileTemplate tile;
+        Tile_Template tile;
 
         foreach (Collider item in colliders)
         {
-            if(( tile = item.GetComponent<TileTemplate>()) != null)
+            if(( tile = item.GetComponent<Tile_Template>()) != null)
             {
                 if (!adjacencyList.Contains(tile))
                 {

@@ -8,7 +8,8 @@ using UnityEngine;
 public class TacticsMove : MonoBehaviour
 {
     [Header("Internal data")]
-    // public TileManager tileManager = null;
+    public TileManager_Battleground tileManager_Battleground = null;
+    public TileManager_Campaign tileManager_Campaign = null;
 
     /// <summary>
     /// identifier must be unique for every TacticsMove object
@@ -27,27 +28,27 @@ public class TacticsMove : MonoBehaviour
     /// list of tiles accesible to THIS object
     /// </summary>
     [Header("Movement")]
-    public List<TileTemplate> selectableTiles = new List<TileTemplate>();
+    public List<Tile_Template> selectableTiles = new List<Tile_Template>();
 
     /// <summary>
     /// tile under THIS unit
     /// </summary>
-    public TileTemplate currentTile;
+    public Tile_Template currentTile;
 
     /// <summary>
     /// destination tile for THIS if moving
     /// </summary>
-    public TileTemplate targetTile;
+    public Tile_Template targetTile;
 
     /// <summary>
     /// 
     /// </summary>
-    public List<TileTemplate> path = new List<TileTemplate>();
+    public List<Tile_Template> path = new List<Tile_Template>();
 
     /// <summary>
     /// 
     /// </summary>
-    public List<TileTemplate> pathGhost = new List<TileTemplate>();
+    public List<Tile_Template> pathGhost = new List<Tile_Template>();
 
     /// <summary>
     /// max distance unit can move
@@ -84,10 +85,6 @@ public class TacticsMove : MonoBehaviour
     /// </summary>
     public float jumpHeight = 2;
 
-    public bool fallingDown = false;
-    public bool jumpingUp = false;
-    public bool movingEdge = false;
-
     public Vector3 velocity = new Vector3();
     public Vector3 heading = new Vector3();
     public Vector3 jumpTarget = new Vector3();
@@ -101,27 +98,58 @@ public class TacticsMove : MonoBehaviour
     public Renderer render;
     public Material material;
 
+    private void Awake()
+    {
+        if (render == null)
+        {
+            if ((render = GetComponent<Renderer>()) == null)
+                Debug.LogError("render", gameObject);
+        }
+
+        if (material == null)
+        {
+            if ((material = render.material) == null)
+                Debug.LogError("material", gameObject);
+        }
+
+        // assign tileManager
+        if (tileManager_Campaign == null)
+        {
+            if ((tileManager_Campaign = GameObject.FindGameObjectWithTag("TileManager_Campaign").GetComponent<TileManager_Campaign>()) == null)
+                Debug.LogError("tileManager_Campaign", gameObject);
+        }
+
+        // assign tileManager
+        if (tileManager_Battleground == null)
+        {
+            if ((tileManager_Battleground = GameObject.FindGameObjectWithTag("TileManager_Battleground").GetComponent<TileManager_Battleground>()) == null)
+                Debug.LogError("tileManager_Battleground", gameObject);
+        }
+
+        Init_Awake();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual void Init_Awake() { }
+
     private void Start()
     {
+        /*
         // add to static list
         if (!TileManager_Template.list_Units.Contains(this))
         {
             TileManager_Template.list_Units.Add(this);
             TileManager_Template.UnitAwake();
         }
+        */
 
         // INIT variables
         targetTile = null;
         unitIsSelected = false;
 
-        /*
-        // assign tileManager
-        if (tileManager == null)
-        {
-            if ((tileManager = GameObject.Find("TileManager").GetComponent<TileManager>()) == null)
-                Debug.LogError("tileManager", gameObject);
-        }
-        */
+        
 
         Init_start();
 
@@ -221,48 +249,42 @@ public class TacticsMove : MonoBehaviour
 
     }
 
-    public TileTemplate GetTargetTile(GameObject target)
+    public Tile_Template GetTargetTile(GameObject target)
     {
         // Debug.Log("<color=yellow> GetTargetTile </color>\n target = " + target + "\n", gameObject);
 
         RaycastHit hit;
-        TileTemplate tile = null;
+        Tile_Template tile = null;
 
         if(Physics.Raycast(target.transform.position, -Vector3.up, out hit, 10))
         {
-            tile = hit.collider.GetComponent<TileTemplate>();
+            tile = hit.collider.GetComponent<Tile_Template>();
         }
 
         return tile;
     }
 
+
     /// <summary>
-    /// obsolete, already done
+    /// 
     /// </summary>
-    public void ComputeAdjacencyLists()
-    {
-        // Debug.Log("<color=yellow> ComputeAdjacencyLists </color>\n\n", gameObject);
-
-        foreach (TileTemplate tile in TileManager_Template.list_Tile)
-        {
-            tile.Reset();
-        }
-    }
-
     public void FindSelectableTiles()
     {
         // Debug.Log("<color=yellow> FindSelectableTiles </color>\n\n",gameObject);
 
-        ComputeAdjacencyLists();
+        foreach (Tile_Template tile in TileManager_Template.list_Tile)
+        {
+            tile.Reset();
+        }
 
-        if(currentTile == null)
+        if (currentTile == null)
         {
             GetCurrentTile();
         }
 
         currentTile.walkable = true;
 
-        Queue<TileTemplate> process = new Queue<TileTemplate>();
+        Queue<Tile_Template> process = new Queue<Tile_Template>();
 
         process.Enqueue(currentTile);
 
@@ -270,14 +292,14 @@ public class TacticsMove : MonoBehaviour
 
         while(process.Count > 0)
         {
-            TileTemplate t = process.Dequeue();
+            Tile_Template t = process.Dequeue();
 
             selectableTiles.Add(t);
             t.selectable = true;
 
             if(t.distance < remainingMoves)
             {
-                foreach (TileTemplate tile in t.adjacencyList)
+                foreach (Tile_Template tile in t.adjacencyList)
                 {
                     if (!tile.visited && tile.walkable)
                     {
@@ -291,7 +313,11 @@ public class TacticsMove : MonoBehaviour
         }
     }
 
-    public void MoveToTile(TileTemplate tile)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="tile"></param>
+    public void MoveToTile(Tile_Template tile)
     {
         Debug.Log("<color=yellow> MoveToTile </color>\n tile = " + tile + "\n", gameObject);
 
@@ -299,7 +325,7 @@ public class TacticsMove : MonoBehaviour
 
         // moving = true;
 
-        TileTemplate next = tile;
+        Tile_Template next = tile;
 
         while(next != null)
         {
@@ -314,7 +340,7 @@ public class TacticsMove : MonoBehaviour
         TileManager_Template.someUnitIsMoving = true;
     }
 
-    public void MoveToTileGhost(TileTemplate tile)
+    public void MoveToTileGhost(Tile_Template tile)
     {
         pathGhost.Clear();
 
@@ -322,7 +348,7 @@ public class TacticsMove : MonoBehaviour
 
         // moving = true;
 
-        TileTemplate next = tile;
+        Tile_Template next = tile;
 
         while (next != null)
         {
@@ -354,7 +380,7 @@ public class TacticsMove : MonoBehaviour
         {
             // is moving to target tile
             //Tile t = path.Peek();
-            TileTemplate t = path[path.Count - 1];
+            Tile_Template t = path[path.Count - 1];
 
             if (t.unitsOnTile != null)
             {
@@ -381,23 +407,6 @@ public class TacticsMove : MonoBehaviour
 
             if (Vector3.Distance(transform.position, target) >= 0.05f)
             {
-
-                #region Jump
-                /*
-                bool jump = transform.position.y != target.y;
-
-                if (jump)
-                {
-                    Jump(target);
-                }
-                else
-                {
-                    CalculateHeading(target);
-                    SetHorizontalVelocity();
-                }
-                */
-                #endregion
-
                 CalculateHeading(target);
                 SetHorizontalVelocity();
 
@@ -454,7 +463,7 @@ public class TacticsMove : MonoBehaviour
             TileManager_Template.selectedTile = null;
 
             // update map color
-            TileManager_Template.UpdateTileColor(false);
+            tileManager_Campaign.UpdateTileColor(false);
 
         }
 
@@ -473,107 +482,6 @@ public class TacticsMove : MonoBehaviour
         velocity = heading * moveSpeed;
     }
 
-    private void Jump(Vector3 target)
-    {
-        if (fallingDown)
-        {
-            FallDownward(target);
-        }
-        else if (jumpingUp)
-        {
-            JumpUpward(target);
-        }
-        else if (movingEdge)
-        {
-            MoveToEdge();
-        }
-        else
-        {
-            PrepareJump(target);
-        }
-    }
-
-    private void FallDownward(Vector3 target)
-    {
-        velocity += Physics.gravity * Time.deltaTime;
-
-        if(transform.position.y <= target.y)
-        {
-            fallingDown = false;
-            jumpingUp = false;
-            movingEdge = false;
-
-            Vector3 p = transform.position;
-            p.y = target.y;
-            transform.position = p;
-
-            velocity = new Vector3();
-        }
-    }
-
-    private void JumpUpward(Vector3 target)
-    {
-        velocity += Physics.gravity * Time.deltaTime;
-
-        if(transform.position.y > target.y)
-        {
-            jumpingUp = false;
-            fallingDown = true;
-        }
-    }
-
-    /// <summary>
-    /// moving to edge of tile and preparing for jump/fall
-    /// </summary>
-    private void MoveToEdge()
-    {
-        if(Vector3.Distance(transform.position,jumpTarget) >= 0.05f)
-        {
-            SetHorizontalVelocity();
-        }
-        else
-        {
-            movingEdge = false;
-            fallingDown = true;
-
-            velocity /= 5.0f;
-            velocity.y = 1.5f;
-
-        }
-    }
-
-    private void PrepareJump(Vector3 target)
-    {
-        float targetY = target.y;
-
-        target.y = transform.position.y;
-
-        CalculateHeading(target);
-
-        if(transform.position.y > targetY)
-        {
-            fallingDown = false;
-            jumpingUp = false;
-            movingEdge = true;
-
-            jumpTarget = transform.position + ((target - transform.position) / 2.0f);
-        }
-        else
-        {
-            fallingDown = false;
-            jumpingUp = true;
-            movingEdge = false;
-
-            velocity = heading * moveSpeed / 3.0f;
-
-            float difference = targetY - transform.position.y;
-
-            velocity.y = jumpVelocity * (0.5f + difference / 2.0f);
-        }
-
-    }
-
-
     /// <summary>
     /// reset currentTile , tile.Reset and clear selectable tiles
     /// </summary>
@@ -585,7 +493,7 @@ public class TacticsMove : MonoBehaviour
             currentTile = null;
         }
 
-        foreach(TileTemplate tile in selectableTiles)
+        foreach(Tile_Template tile in selectableTiles)
         {
             tile.Reset();
         }
@@ -655,7 +563,7 @@ public class TacticsMove : MonoBehaviour
         TileManager_Template.selectedUnit = this;
         TileManager_Template.SelectedUnit(this);
 
-        TileManager_Template.UpdateTileColor(true);
+        tileManager_Campaign.UpdateTileColor(true);
 
         // TODO: do for all selected units
         unitIsSelected = true;
@@ -665,13 +573,13 @@ public class TacticsMove : MonoBehaviour
     {
         Debug.Log("<color=yellow> OnRightMouseClick </color>\n TacticsMove " + this + "\n", gameObject);
 
-        TileManager_Template.UpdateTileColor(false);
+        tileManager_Campaign.UpdateTileColor(false);
 
         // TODO: make all selected units unselected
         // check if do for all or only THIS
         TileManager_Template.selectedUnit = null;
 
-        TileManager_Template.DeselectUnits();
+        tileManager_Campaign.DeselectUnits();
     }
 
     #endregion

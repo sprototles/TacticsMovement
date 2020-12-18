@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Tile
+  - Tile_Campaign
+  - Tile_Battleground
+  - TileManager_Campaign
+  - TileManager_Battleground
   layers:
   - Default
   - TransparentFX
